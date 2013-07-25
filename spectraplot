@@ -34,15 +34,6 @@ class ElementLine:
     self.angstrom = angstrom
     self.label = label
 
-class Element:
-  def __init__(self, name):
-    self.name = name
-    self.lines = []
-
-  def add_line(self, angstrom, label):
-    self.lines.append(ElementLine(angstrom, label))
-
-
 
 parser = argparse.ArgumentParser(description='Process linear SA100 spectra')
 parser.add_argument('filename', type=str, help='FITS filename')
@@ -50,6 +41,8 @@ parser.add_argument('--zero', dest='zero_position', type=int, default=0,
                     help='Pixel position of zero order image')
 parser.add_argument('--calibration', dest='calibration', type=str,
     help='Calibration pixel position.  Format pixel:angstrom,pixel:angstrom')
+parser.add_argument('--lines', dest='lines', type=str,
+                    help='Plot specified lines.')
 
 args = parser.parse_args()
 
@@ -68,7 +61,6 @@ if args.calibration:
 
   print 'Calibration: Angstrom / pixel = %f' % (calibration.angstrom_per_pixel)
   print 'Calibration: Zero order pixel position = %f' % (calibration.zero_position)
-  print calibration.angstrom(44)
 
   wl = [calibration.angstrom(i) for i in range(len(mean_data))]
 
@@ -76,30 +68,23 @@ if args.calibration:
   plt.ylabel('Relative intensity')
   plt.plot(wl, mean_data)
 
-  hydrogen = Element('Hydrogen')
-  hydrogen.add_line(6563, r'H$\alpha$')
-  hydrogen.add_line(4861, r'H$\beta$')
-  hydrogen.add_line(4341, r'H$\gamma$')
+  element_lines = {
+    'Ha': ElementLine(6563, r'H$\alpha$'),
+    'Hb': ElementLine(4861, r'H$\beta$'),
+    'Hg': ElementLine(4341, r'H$\gamma$'),
+    'CaH': ElementLine(3968, 'Ca H'),
+    'CaK': ElementLine(3934, 'Ca K'),
+  }
 
-  calcium = Element('Calcium')
-  calcium.add_line(3968, 'Ca H')
-  calcium.add_line(3934, 'Ca K')
+  if args.lines:
+    lines_to_plot = args.lines.split(',')
 
-  oxygen = Element('Oxygen')
-  oxygen.add_line(7594, 'O A')
-
-  for line in hydrogen.lines:
-    plt.axvline(x=line.angstrom, color='red')
-    plt.text(line.angstrom, 10, '%s\n(%.02f)' % (line.label, line.angstrom))
-
-  for line in oxygen.lines:
-    plt.axvline(x=line.angstrom, color='red')
-    plt.text(line.angstrom, 10, '%s\n(%.02f)' % (line.label, line.angstrom))
+    for line_to_plot in lines_to_plot:
+      line = element_lines[line_to_plot]
+      plt.axvline(x=line.angstrom, color='red')
+      plt.text(line.angstrom, 10, '%s\n(%.02f)' % (line.label, line.angstrom))
 
   plt.axvline(x=0, color='yellow')
-  #for line in calcium.lines:
-  #  plt.axvline(x=line.angstrom, color='green')
-  #  plt.text(line.angstrom, 10, line.label)
 
 else:
   plt.xlabel('Pixel')
