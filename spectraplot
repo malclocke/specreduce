@@ -40,6 +40,14 @@ class ElementLine:
     self.label = label
 
 
+element_lines = {
+  'Ha': ElementLine(6563, r'H$\alpha$'),
+  'Hb': ElementLine(4861, r'H$\beta$'),
+  'Hg': ElementLine(4341, r'H$\gamma$'),
+  'CaH': ElementLine(3968, 'Ca H'),
+  'CaK': ElementLine(3934, 'Ca K'),
+}
+
 parser = argparse.ArgumentParser(description='Process linear SA100 spectra')
 parser.add_argument('filename', type=str, help='FITS filename')
 parser.add_argument('--zero', dest='zero_position', type=int, default=0,
@@ -61,6 +69,12 @@ if args.calibration:
   reference_1, reference_2 = args.calibration.split(',')
   pixel1, angstrom1 = reference_1.split(':')
   pixel2, angstrom2 = reference_2.split(':')
+
+  if angstrom1 in element_lines:
+    angstrom1 = element_lines[angstrom1].angstrom
+  if angstrom2 in element_lines:
+    angstrom2 = element_lines[angstrom2].angstrom
+
   calibration = Calibration(CalibrationReference(int(pixel1),float(angstrom1)),
                             CalibrationReference(int(pixel2), float(angstrom2)))
 
@@ -72,21 +86,14 @@ if args.calibration:
   plt.ylabel('Relative intensity')
   plt.plot(wl, mean_data)
 
-  element_lines = {
-    'Ha': ElementLine(6563, r'H$\alpha$'),
-    'Hb': ElementLine(4861, r'H$\beta$'),
-    'Hg': ElementLine(4341, r'H$\gamma$'),
-    'CaH': ElementLine(3968, 'Ca H'),
-    'CaK': ElementLine(3934, 'Ca K'),
-  }
-
   if args.lines:
     lines_to_plot = args.lines.split(',')
 
     for line_to_plot in lines_to_plot:
       line = element_lines[line_to_plot]
       plt.axvline(x=line.angstrom, color='red')
-      plt.text(line.angstrom, 10, '%s\n(%.02f)' % (line.label, line.angstrom))
+      plt.text(line.angstrom, 10, '%s (%.02f $\AA$)' % (line.label, line.angstrom),
+          rotation='vertical', verticalalignment='bottom')
 
   plt.axvline(x=0, color='yellow')
 
