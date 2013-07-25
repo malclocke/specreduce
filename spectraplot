@@ -16,6 +16,11 @@ class Calibration:
     self.angstrom_per_pixel = self._calculate_angstrom_per_pixel()
     self.zero_position = self._calculate_zero_position()
 
+  def __repr__(self):
+    return "<Calibration angstrom_per_pixel: %f, zero_position: %d>" % (
+        self.angstrom_per_pixel, self.zero_position
+    )
+
   def angstrom(self, pixel):
     return self.angstrom_per_pixel * (pixel - self.zero_position)
 
@@ -59,8 +64,7 @@ if args.calibration:
   calibration = Calibration(CalibrationReference(int(pixel1),float(angstrom1)),
                             CalibrationReference(int(pixel2), float(angstrom2)))
 
-  print 'Calibration: Angstrom / pixel = %f' % (calibration.angstrom_per_pixel)
-  print 'Calibration: Zero order pixel position = %f' % (calibration.zero_position)
+  print calibration
 
   wl = [calibration.angstrom(i) for i in range(len(mean_data))]
 
