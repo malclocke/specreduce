@@ -4,13 +4,30 @@ import matplotlib.pyplot as plt
 import sys
 import argparse
 
-class PixelAngstromMapper:
-  def __init__(self, zero_position, angstrom_per_pixel):
-    self.zero_position = zero_position
-    self.angstrom_per_pixel = angstrom_per_pixel
+class CalibrationReference:
+  def __init__(self, pixel, angstrom):
+    self.pixel = pixel
+    self.angstrom = angstrom
+
+class Calibration:
+  def __init__(self, reference1, reference2):
+    self.reference1 = reference1
+    self.reference2 = reference2
+    self.angstrom_per_pixel = self._calculate_angstrom_per_pixel()
+    self.zero_position = self._calculate_zero_position()
 
   def angstrom(self, pixel):
-    return self.angstrom_per_pixel * (pixel + 1 - self.zero_position)
+    return self.angstrom_per_pixel * (pixel - self.zero_position)
+
+  def _calculate_angstrom_per_pixel(self):
+    angstrom_range = float(self.reference2.angstrom - self.reference1.angstrom)
+    pixel_range = (self.reference2.pixel - self.reference1.pixel)
+    return angstrom_range / pixel_range
+
+  def _calculate_zero_position(self):
+    return self.reference1.pixel - (self.reference1.angstrom / self.angstrom_per_pixel)
+
+
 
 class ElementLine:
   def __init__(self, angstrom, label):
@@ -32,41 +49,62 @@ parser.add_argument('filename', type=str, help='FITS filename')
 parser.add_argument('--zero', dest='zero_position', type=int, default=0,
                     help='Pixel position of zero order image')
 parser.add_argument('--calibration', dest='calibration', type=str,
-                    help='Calibration pixel position.  Format pixel:angstrom')
+    help='Calibration pixel position.  Format pixel:angstrom,pixel:angstrom')
 
 args = parser.parse_args()
 
 hdulist = pyfits.open(args.filename)
 mean_data = hdulist[0].data.mean(axis=0)
 
-calibration_position, calibration_angstrom = [int(i) for i in args.calibration.split(':')]
-
-angstrom_per_pixel = float(calibration_angstrom) / (calibration_position - args.zero_position)
-
-pam = PixelAngstromMapper(args.zero_position, angstrom_per_pixel)
+plt.title(args.filename)
 
 
-wl = [pam.angstrom(i) for i in range(len(mean_data))]
+if args.calibration:
+  reference_1, reference_2 = args.calibration.split(',')
+  pixel1, angstrom1 = reference_1.split(':')
+  pixel2, angstrom2 = reference_2.split(':')
+  calibration = Calibration(CalibrationReference(int(pixel1),float(angstrom1)),
+                            CalibrationReference(int(pixel2), float(angstrom2)))
 
-plt.xlabel(r'Wavelength ($\AA$)')
-plt.ylabel('Relative intensity')
-plt.plot(wl, mean_data)
+  print 'Calibration: Angstrom / pixel = %f' % (calibration.angstrom_per_pixel)
+  print 'Calibration: Zero order pixel position = %f' % (calibration.zero_position)
+  print calibration.angstrom(44)
 
-hydrogen = Element('Hydrogen')
-hydrogen.add_line(6563, r'H$\alpha$')
-hydrogen.add_line(4861, r'H$\beta$')
-hydrogen.add_line(4341, r'H$\gamma$')
+  wl = [calibration.angstrom(i) for i in range(len(mean_data))]
 
-calcium = Element('Calcium')
-calcium.add_line(3968, 'Ca H')
-calcium.add_line(3934, 'Ca K')
+  plt.xlabel(r'Wavelength ($\AA$)')
+  plt.ylabel('Relative intensity')
+  plt.plot(wl, mean_data)
 
-for line in hydrogen.lines:
-  plt.axvline(x=line.angstrom)
-  plt.text(line.angstrom, 10, line.label)
+  hydrogen = Element('Hydrogen')
+  hydrogen.add_line(6563, r'H$\alpha$')
+  hydrogen.add_line(4861, r'H$\beta$')
+  hydrogen.add_line(4341, r'H$\gamma$')
 
-for line in calcium.lines:
-  plt.axvline(x=line.angstrom)
-  plt.text(line.angstrom, 10, line.label)
+  calcium = Element('Calcium')
+  calcium.add_line(3968, 'Ca H')
+  calcium.add_line(3934, 'Ca K')
+
+  oxygen = Element('Oxygen')
+  oxygen.add_line(7594, 'O A')
+
+  for line in hydrogen.lines:
+    plt.axvline(x=line.angstrom, color='red')
+    plt.text(line.angstrom, 10, '%s\n(%.02f)' % (line.label, line.angstrom))
+
+  for line in oxygen.lines:
+    plt.axvline(x=line.angstrom, color='red')
+    plt.text(line.angstrom, 10, '%s\n(%.02f)' % (line.label, line.angstrom))
+
+  plt.axvline(x=0, color='yellow')
+  #for line in calcium.lines:
+  #  plt.axvline(x=line.angstrom, color='green')
+  #  plt.text(line.angstrom, 10, line.label)
+
+else:
+  plt.xlabel('Pixel')
+  plt.ylabel('Relative intensity')
+  plt.plot(mean_data)
+  
 
 plt.show()
