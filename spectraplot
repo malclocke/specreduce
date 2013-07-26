@@ -59,7 +59,8 @@ parser.add_argument('--lines', dest='lines', type=str,
 args = parser.parse_args()
 
 hdulist = pyfits.open(args.filename)
-mean_data = hdulist[0].data.mean(axis=0)
+print hdulist.info()
+sum_data = hdulist[0].data.sum(axis=0)
 
 plt.title(args.filename)
 
@@ -79,11 +80,18 @@ if args.calibration:
 
   print calibration
 
-  wl = [calibration.angstrom(i) for i in range(len(mean_data))]
+  wl = [calibration.angstrom(i) for i in range(len(sum_data))]
 
+  plt.subplot(211)
+  plt.xlabel('x px')
+  plt.ylabel('y px')
+  imgplot = plt.imshow(hdulist[0].data)
+  imgplot.set_cmap('gray')
+
+  plt.subplot(212)
   plt.xlabel(r'Wavelength ($\AA$)')
   plt.ylabel('Relative intensity')
-  plt.plot(wl, mean_data)
+  plt.plot(wl, sum_data)
 
   if args.lines:
     lines_to_plot = args.lines.split(',')
@@ -97,9 +105,16 @@ if args.calibration:
   plt.axvline(x=0, color='yellow')
 
 else:
+  plt.subplot(211)
+  plt.xlabel('x px')
+  plt.ylabel('y px')
+  imgplot = plt.imshow(hdulist[0].data)
+  imgplot.set_cmap('gray')
+
+  plt.subplot(212)
   plt.xlabel('Pixel')
   plt.ylabel('Relative intensity')
-  plt.plot(mean_data)
+  plt.plot(sum_data)
   
 
 plt.show()
