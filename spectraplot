@@ -38,6 +38,9 @@ class ElementLine:
     self.angstrom = angstrom
     self.label = label
 
+  def __repr__(self):
+    return "%f (%s)" % (self.angstrom, self.label)
+
 
 element_lines = {
   'Ha': ElementLine(6563, r'H$\alpha$'),
@@ -54,8 +57,15 @@ parser.add_argument('--calibration', '-c', dest='calibration', type=str,
 parser.add_argument('--lines', '-l', dest='lines', type=str,
                     help='Plot specified lines.')
 parser.add_argument('--title', '-t', dest='title', type=str, help='Plot title')
+parser.add_argument('--listlines', '-L', action='store_true',
+    help='List available lines')
 
 args = parser.parse_args()
+
+if args.listlines:
+  for k, v in element_lines.iteritems():
+    print "%4s %s" % (k, v)
+  exit()
 
 hdulist = pyfits.open(args.filename)
 print hdulist.info()
