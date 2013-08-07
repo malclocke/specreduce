@@ -79,6 +79,7 @@ parser.add_argument('--calibration', '-c', dest='calibration', type=str,
 parser.add_argument('--lines', '-l', dest='lines', type=str,
                     help='Plot specified lines.')
 parser.add_argument('--title', '-t', dest='title', type=str, help='Plot title')
+parser.add_argument('--suptitle', '-s', dest='suptitle', type=str, help='Plot super-title, appears above title')
 parser.add_argument('--listlines', '-L', action='store_true',
     help='List available lines')
 parser.add_argument('--reference', '-r', dest='reference', type=str,
@@ -158,5 +159,8 @@ else:
   title = args.filename
 
 plt.title(title)
+
+if args.suptitle:
+  plt.suptitle(args.suptitle)
 
 plt.show()
