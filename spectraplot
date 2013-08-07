@@ -52,6 +52,18 @@ class ElementLine:
     return "%f (%s)" % (self.angstrom, self.label)
 
 
+class Reference:
+  def __init__(self, reference):
+    self.hdulist = pyfits.open(reference)
+
+  def wavelengths(self):
+    return self.hdulist[1].data.field(0)
+
+  def intensities(self):
+    print self.hdulist[1].data.field(1).max()
+    return 800000000000 * self.hdulist[1].data.field(1)
+
+
 element_lines = {
   'Ha': ElementLine(6563, r'H$\alpha$'),
   'Hb': ElementLine(4861, r'H$\beta$'),
@@ -69,6 +81,8 @@ parser.add_argument('--lines', '-l', dest='lines', type=str,
 parser.add_argument('--title', '-t', dest='title', type=str, help='Plot title')
 parser.add_argument('--listlines', '-L', action='store_true',
     help='List available lines')
+parser.add_argument('--reference', '-r', dest='reference', type=str,
+    help='Plot a reference spectra')
 
 args = parser.parse_args()
 
@@ -119,6 +133,11 @@ if args.calibration:
           rotation='vertical', verticalalignment='bottom')
 
   plt.axvline(x=0, color='yellow')
+
+  if args.reference:
+    reference = Reference(args.reference)
+    print reference.intensities()
+    plt.plot(reference.wavelengths(), reference.intensities())
 
 else:
   plt.subplot(212)
