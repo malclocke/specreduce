@@ -12,16 +12,23 @@ class Calibration:
   def __init__(self, reference1, reference2):
     self.reference1 = reference1
     self.reference2 = reference2
-    self.angstrom_per_pixel = self._calculate_angstrom_per_pixel()
-    self.zero_position = self._calculate_zero_position()
 
   def __repr__(self):
-    return "<Calibration angstrom_per_pixel: %f, zero_position: %d>" % (
-        self.angstrom_per_pixel, self.zero_position
+    return "<Calibration angstrom_per_pixel: %f, zero_position: x>" % (
+        self.angstrom_per_pixel()
     )
 
   def angstrom(self, pixel):
-    return self.angstrom_per_pixel * (pixel - self.zero_position)
+    return (self.slope() * (pixel - self.reference1.pixel)) + self.reference1.angstrom
+
+  def slope(self):
+    return self.angstrom_difference() / self.pixel_difference()
+
+  def angstrom_difference(self):
+    return self.reference1.angstrom - self.reference2.angstrom
+
+  def pixel_difference(self):
+    return self.reference1.pixel - self.reference2.pixel
 
   def _calculate_angstrom_per_pixel(self):
     angstrom_range = float(self.reference2.angstrom - self.reference1.angstrom)
@@ -30,6 +37,9 @@ class Calibration:
 
   def _calculate_zero_position(self):
     return self.reference1.pixel - (self.reference1.angstrom / self.angstrom_per_pixel)
+
+  def angstrom_per_pixel(self):
+    return self.slope()
 
 
 
