@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import pyfits
+import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
@@ -125,10 +126,17 @@ class Reference:
   def wavelengths(self):
     return self.hdulist[1].data.field(0)
 
-  def intensities(self):
-    print self.hdulist[1].data.field(1).max()
-    # FIXME
-    return 800000000000 * self.hdulist[1].data.field(1)
+  def intensities(self, scale_to):
+    return self.scale_factor(scale_to) * self.hdulist[1].data.field(1)
+
+  def interp(self, target_wavelengths, target_intensities):
+    return np.interp(
+        target_wavelengths, self.wavelengths(),
+        self.intensities(target_intensities.max())
+    )
+
+  def scale_factor(self, scale_to):
+    return scale_to / self.hdulist[1].data.field(1).max()
 
   def reference_path(self, reference):
     return os.path.join(self.pickles_dir(), self.references[reference])
@@ -211,8 +219,17 @@ def main():
 
     if args.reference:
       reference = Reference(args.reference)
-      print reference.intensities()
-      plt.plot(reference.wavelengths(), reference.intensities())
+      interpolated_reference = reference.interp(wl, sum_data)
+      plt.plot(wl, interpolated_reference)
+
+      # WIP - Calculate camera response
+      #divided = np.divide(sum_data, interpolated_reference)
+      #divided[divided==np.inf]=0
+      #divided = sum_data.max() * divided
+      ##divided = np.divide(sum_data, divided)
+      #print divided.max()
+      #plt.plot(wl, divided)
+      ##plt.plot(wl, reference.interp(wl, sum_data.max()))
 
   else:
     plt.subplot(212)
