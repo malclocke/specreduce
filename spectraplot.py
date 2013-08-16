@@ -150,6 +150,7 @@ def main():
     'Ha': ElementLine(6563, r'H$\alpha$'),
     'Hb': ElementLine(4861, r'H$\beta$'),
     'Hg': ElementLine(4341, r'H$\gamma$'),
+    'Hd': ElementLine(4102, r'H$\delta$'),
     'CaH': ElementLine(3968, 'Ca H'),
     'CaK': ElementLine(3934, 'Ca K'),
   }
