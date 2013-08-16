@@ -2,6 +2,7 @@
 import pyfits
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.interpolate
 import argparse
 import os
 
@@ -205,7 +206,7 @@ def main():
     plt.subplot(211)
     plt.xlabel(r'Wavelength ($\AA$)')
     plt.ylabel('Relative intensity')
-    plt.plot(wl, sum_data)
+    plt.plot(wl, sum_data, label='Raw data')
 
     if args.lines:
       lines_to_plot = args.lines.split(',')
@@ -221,16 +222,23 @@ def main():
     if args.reference:
       reference = Reference(args.reference)
       interpolated_reference = reference.interp(wl, sum_data)
-      plt.plot(wl, interpolated_reference)
+      plt.plot(wl, interpolated_reference, label='Reference (%s)' % args.reference)
 
       # WIP - Calculate camera response
-      #divided = np.divide(sum_data, interpolated_reference)
-      #divided[divided==np.inf]=0
+      divided = np.divide(sum_data, interpolated_reference)
+      divided[divided==np.inf]=0
       #divided = sum_data.max() * divided
       ##divided = np.divide(sum_data, divided)
       #print divided.max()
       #plt.plot(wl, divided)
-      ##plt.plot(wl, reference.interp(wl, sum_data.max()))
+      plt.xlim(left=3900,right=7000)
+      plt.ylim(top=50000)
+      smoothing = 20
+      spacing = 500
+      tck = scipy.interpolate.splrep(wl, divided, s=smoothing, k=1)
+      smoothed = scipy.interpolate.splev(wl, tck)
+      corrected = plt.plot(wl, np.divide(sum_data, smoothed), label='Corrected')
+      plt.legend(loc='best')
 
   else:
     plt.subplot(212)
