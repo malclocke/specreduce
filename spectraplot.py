@@ -59,7 +59,23 @@ class ElementLine:
         rotation='vertical', verticalalignment='bottom')
 
 
-class Reference:
+class Plotable:
+  def plot_onto(self, axes):
+    axes.plot(self.wavelengths(), self.data(), label=self.label)
+
+  def max(self):
+    return self.data().max()
+
+  def divide_by(self, other_spectra):
+    divided = np.divide(self.data(), other_spectra.interpolate_to(self))
+    divided[divided==np.inf]=0
+    return divided
+
+  def interpolate_to(self, spectra):
+    return np.interp(spectra.wavelengths(), self.wavelengths(), self.data())
+
+
+class Reference(Plotable):
 
   references = {
     "M5III": "pickles_100.fits", "M6III": "pickles_101.fits",
@@ -141,14 +157,6 @@ class Reference:
   def wavelengths(self):
     return self.hdulist[1].data.field(0)
 
-  def interp(self, target_wavelengths, target_intensities):
-    return np.interp(
-        target_wavelengths, self.wavelengths(), self.data()
-    )
-
-  def interpolate_to(self, spectra):
-    return self.interp(spectra.wavelengths(), spectra.data())
-
   def scale_to(self, spectra):
     self.scale_factor = spectra.max() / self.data().max()
     return self.scale_factor
@@ -162,11 +170,8 @@ class Reference:
   def data(self):
     return self.scale_factor * self.hdulist[1].data.field(1)
 
-  def plot_onto(self, axes):
-    axes.plot(self.wavelengths(), self.data(), label=self.label)
 
-
-class ImageSpectra:
+class ImageSpectra(Plotable):
 
   label = 'Raw data'
   calibration = False
@@ -190,18 +195,8 @@ class ImageSpectra:
     imgplot = axes.imshow(self.raw)
     imgplot.set_cmap('gray')
 
-  def plot_onto(self, axes):
-    axes.plot(self.wavelengths(), self.data(), label=self.label)
 
-  def divide_by(self, other_spectra):
-    divided = np.divide(self.data(), other_spectra.interpolate_to(self))
-    divided[divided==np.inf]=0
-    return divided
-
-  def max(self):
-    return self.data().max()
-
-class CorrectedSpectra:
+class CorrectedSpectra(Plotable):
 
   smoothing = 20
   spacing   = 500
@@ -217,9 +212,6 @@ class CorrectedSpectra:
 
   def divided(self):
     return self.uncorrected.divide_by(self.reference)
-
-  def plot_onto(self, axes):
-    axes.plot(self.wavelengths(), self.data(), label=self.label)
 
   def data(self):
     return np.divide(self.uncorrected.data(), self.smoothed())
