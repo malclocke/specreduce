@@ -246,6 +246,9 @@ def main():
       help='List available lines')
   parser.add_argument('--reference', '-r', dest='reference', type=str,
       help='Plot a reference spectra')
+  parser.add_argument('--crop', '-C', action='store_true', help='Crop spectra')
+  parser.add_argument('--croprange', type=str, default='3900:7000',
+      help='Set crop range (default: 3900:7000)')
 
   args = parser.parse_args()
 
@@ -261,6 +264,10 @@ def main():
 
   graph_subplot = plt.subplot(211)
   graph_subplot.set_ylabel('Relative intensity')
+
+  if args.crop:
+    crop_left, crop_right = args.croprange.split(':')
+    graph_subplot.set_xlim(left=int(crop_left),right=int(crop_right))
 
   image_subplot = plt.subplot(212)
   image_subplot.set_xlabel('x px')
@@ -302,7 +309,6 @@ def main():
       reference.scale_to(image_spectra)
       plots.append(reference)
 
-      graph_subplot.set_xlim(left=3900,right=7000)
       # FIXME
       graph_subplot.set_ylim(top=50000)
 
