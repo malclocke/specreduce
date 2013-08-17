@@ -47,6 +47,17 @@ class ElementLine:
   def __repr__(self):
     return "%f (%s)" % (self.angstrom, self.label)
 
+  def color(self):
+    return 'red'
+
+  def plot_label(self):
+    return '%s (%.02f $\AA$)' % (self.label, self.angstrom)
+
+  def plot_onto(self, axes):
+    axes.axvline(x=self.angstrom, color=self.color())
+    axes.text(self.angstrom, 10, self.plot_label(),
+        rotation='vertical', verticalalignment='bottom')
+
 
 class Reference:
 
@@ -123,6 +134,7 @@ class Reference:
 
   def __init__(self, reference):
     self.hdulist = pyfits.open(self.reference_path(reference))
+    self.label = 'Reference (%s)' % reference
 
   def wavelengths(self):
     return self.hdulist[1].data.field(0)
@@ -136,6 +148,9 @@ class Reference:
         self.intensities(target_intensities.max())
     )
 
+  def interpolate_to(self, spectra):
+    return self.interp(spectra.wavelengths(), spectra.data())
+
   def scale_factor(self, scale_to):
     return scale_to / self.hdulist[1].data.field(1).max()
 
@@ -144,6 +159,73 @@ class Reference:
 
   def pickles_dir(self):
     return os.path.join(self.base_path, self.subdir)
+
+  def plot_interpolated_onto(self, spectra, axes):
+    interpolated_reference = self.interpolate_to(spectra)
+    axes.plot(spectra.wavelengths(), interpolated_reference, label=self.label)
+
+
+class ImageSpectra:
+
+  label = 'Raw data'
+  calibration = False
+
+  def __init__(self, data):
+    self.raw = data
+
+  def data(self):
+    return self.raw.sum(axis=0)
+
+  def set_calibration(self, calibration):
+    self.calibration = calibration
+
+  def wavelengths(self):
+    if self.calibration:
+      return [self.calibration.angstrom(i) for i in range(len(self.data()))]
+    else:
+      return range(len(self.data()))
+
+  def plot_image_onto(self, axes):
+    imgplot = axes.imshow(self.raw)
+    imgplot.set_cmap('gray')
+
+  def plot_onto(self, axes):
+    axes.plot(self.wavelengths(), self.data(), label=self.label)
+
+  def divide_by(self, other_spectra):
+    divided = np.divide(self.data(), other_spectra.interpolate_to(self))
+    divided[divided==np.inf]=0
+    return divided
+
+class CorrectedSpectra:
+
+  smoothing = 20
+  spacing   = 500
+  k         = 1
+  label     = 'Corrected'
+
+  def __init__(self, uncorrected, reference):
+    self.uncorrected = uncorrected
+    self.reference = reference
+
+  def wavelengths(self):
+    return self.uncorrected.wavelengths()
+
+  def divided(self):
+    return self.uncorrected.divide_by(self.reference)
+
+  def plot_onto(self, axes):
+    axes.plot(self.wavelengths(), self.data(), label=self.label)
+
+  def data(self):
+    return np.divide(self.uncorrected.data(), self.smoothed())
+
+  def smoothed(self):
+    tck = scipy.interpolate.splrep(
+      self.wavelengths(), self.divided(), s=self.smoothing, k=self.k
+    )
+    return scipy.interpolate.splev(self.wavelengths(), tck)
+
 
 
 def main():
@@ -178,7 +260,16 @@ def main():
 
   hdulist = pyfits.open(args.filename)
   print hdulist.info()
-  sum_data = hdulist[0].data.sum(axis=0)
+
+  image_spectra = ImageSpectra(hdulist[0].data)
+
+  graph_subplot = plt.subplot(211)
+  graph_subplot.set_ylabel('Relative intensity')
+
+  image_subplot = plt.subplot(212)
+  image_subplot.set_xlabel('x px')
+  image_subplot.set_ylabel('y px')
+  image_spectra.plot_image_onto(image_subplot)
 
   if args.calibration:
     reference_1, reference_2 = args.calibration.split(',')
@@ -195,62 +286,32 @@ def main():
 
     print calibration
 
-    wl = [calibration.angstrom(i) for i in range(len(sum_data))]
-
-    plt.subplot(212)
-    plt.xlabel('x px')
-    plt.ylabel('y px')
-    imgplot = plt.imshow(hdulist[0].data)
-    imgplot.set_cmap('gray')
-
-    plt.subplot(211)
-    plt.xlabel(r'Wavelength ($\AA$)')
-    plt.ylabel('Relative intensity')
-    plt.plot(wl, sum_data, label='Raw data')
+    image_spectra.set_calibration(calibration)
 
     if args.lines:
       lines_to_plot = args.lines.split(',')
 
       for line_to_plot in lines_to_plot:
         line = element_lines[line_to_plot]
-        plt.axvline(x=line.angstrom, color='red')
-        plt.text(line.angstrom, 10, '%s (%.02f $\AA$)' % (line.label, line.angstrom),
-            rotation='vertical', verticalalignment='bottom')
+        line.plot_onto(graph_subplot)
 
-    plt.axvline(x=0, color='yellow')
+    graph_subplot.axvline(x=0, color='yellow')
+    graph_subplot.set_xlabel(r'Wavelength ($\AA$)')
 
     if args.reference:
       reference = Reference(args.reference)
-      interpolated_reference = reference.interp(wl, sum_data)
-      plt.plot(wl, interpolated_reference, label='Reference (%s)' % args.reference)
+      reference.plot_interpolated_onto(image_spectra, graph_subplot)
 
-      # WIP - Calculate camera response
-      divided = np.divide(sum_data, interpolated_reference)
-      divided[divided==np.inf]=0
-      #divided = sum_data.max() * divided
-      ##divided = np.divide(sum_data, divided)
-      #print divided.max()
-      #plt.plot(wl, divided)
-      plt.xlim(left=3900,right=7000)
-      plt.ylim(top=50000)
-      smoothing = 20
-      spacing = 500
-      tck = scipy.interpolate.splrep(wl, divided, s=smoothing, k=1)
-      smoothed = scipy.interpolate.splev(wl, tck)
-      corrected = plt.plot(wl, np.divide(sum_data, smoothed), label='Corrected')
-      plt.legend(loc='best')
+      graph_subplot.set_xlim(left=3900,right=7000)
+      # FIXME
+      graph_subplot.set_ylim(top=50000)
+
+      corrected_spectra = CorrectedSpectra(image_spectra, reference)
+      corrected_spectra.plot_onto(graph_subplot)
+      graph_subplot.legend(loc='best')
 
   else:
-    plt.subplot(212)
-    plt.xlabel('x px')
-    plt.ylabel('y px')
-    imgplot = plt.imshow(hdulist[0].data)
-    imgplot.set_cmap('gray')
-
-    plt.subplot(211)
-    plt.xlabel('Pixel')
-    plt.ylabel('Relative intensity')
-    plt.plot(sum_data)
+    graph_subplot.set_xlabel('Pixel')
     
 
   if args.title:
@@ -262,6 +323,8 @@ def main():
 
   if args.suptitle:
     plt.suptitle(args.suptitle)
+
+  image_spectra.plot_onto(graph_subplot)
 
   plt.show()
 
