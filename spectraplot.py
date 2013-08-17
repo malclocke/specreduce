@@ -131,28 +131,27 @@ class Reference:
   }
   base_path = os.path.dirname(os.path.realpath(__file__))
   subdir = "ftp.stsci.edu/cdbs/grid/pickles/dat_uvi/"
+  scale_factor = 1
 
-  def __init__(self, reference):
+  def __init__(self, reference, interpolate_source=False):
     self.hdulist = pyfits.open(self.reference_path(reference))
     self.label = 'Reference (%s)' % reference
+    self.interpolate_source = interpolate_source
 
   def wavelengths(self):
     return self.hdulist[1].data.field(0)
 
-  def intensities(self, scale_to):
-    return self.scale_factor(scale_to) * self.hdulist[1].data.field(1)
-
   def interp(self, target_wavelengths, target_intensities):
     return np.interp(
-        target_wavelengths, self.wavelengths(),
-        self.intensities(target_intensities.max())
+        target_wavelengths, self.wavelengths(), self.data()
     )
 
   def interpolate_to(self, spectra):
     return self.interp(spectra.wavelengths(), spectra.data())
 
-  def scale_factor(self, scale_to):
-    return scale_to / self.hdulist[1].data.field(1).max()
+  def scale_to(self, spectra):
+    self.scale_factor = spectra.max() / self.data().max()
+    return self.scale_factor
 
   def reference_path(self, reference):
     return os.path.join(self.pickles_dir(), self.references[reference])
@@ -160,9 +159,11 @@ class Reference:
   def pickles_dir(self):
     return os.path.join(self.base_path, self.subdir)
 
-  def plot_interpolated_onto(self, spectra, axes):
-    interpolated_reference = self.interpolate_to(spectra)
-    axes.plot(spectra.wavelengths(), interpolated_reference, label=self.label)
+  def data(self):
+    return self.scale_factor * self.hdulist[1].data.field(1)
+
+  def plot_onto(self, axes):
+    axes.plot(self.wavelengths(), self.data(), label=self.label)
 
 
 class ImageSpectra:
@@ -196,6 +197,9 @@ class ImageSpectra:
     divided = np.divide(self.data(), other_spectra.interpolate_to(self))
     divided[divided==np.inf]=0
     return divided
+
+  def max(self):
+    return self.data().max()
 
 class CorrectedSpectra:
 
@@ -271,6 +275,9 @@ def main():
   image_subplot.set_ylabel('y px')
   image_spectra.plot_image_onto(image_subplot)
 
+  plots = []
+  plots.append(image_spectra)
+
   if args.calibration:
     reference_1, reference_2 = args.calibration.split(',')
     pixel1, angstrom1 = reference_1.split(':')
@@ -293,22 +300,21 @@ def main():
 
       for line_to_plot in lines_to_plot:
         line = element_lines[line_to_plot]
-        line.plot_onto(graph_subplot)
+        plots.append(line)
 
     graph_subplot.axvline(x=0, color='yellow')
     graph_subplot.set_xlabel(r'Wavelength ($\AA$)')
 
     if args.reference:
       reference = Reference(args.reference)
-      reference.plot_interpolated_onto(image_spectra, graph_subplot)
+      reference.scale_to(image_spectra)
+      plots.append(reference)
 
       graph_subplot.set_xlim(left=3900,right=7000)
       # FIXME
       graph_subplot.set_ylim(top=50000)
 
-      corrected_spectra = CorrectedSpectra(image_spectra, reference)
-      corrected_spectra.plot_onto(graph_subplot)
-      graph_subplot.legend(loc='best')
+      plots.append(CorrectedSpectra(image_spectra, reference))
 
   else:
     graph_subplot.set_xlabel('Pixel')
@@ -324,7 +330,10 @@ def main():
   if args.suptitle:
     plt.suptitle(args.suptitle)
 
-  image_spectra.plot_onto(graph_subplot)
+  for plot in plots:
+    plot.plot_onto(graph_subplot)
+
+  graph_subplot.legend(loc='best')
 
   plt.show()
 
