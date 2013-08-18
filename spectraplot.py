@@ -249,6 +249,8 @@ def main():
   parser.add_argument('--crop', '-C', action='store_true', help='Crop spectra')
   parser.add_argument('--croprange', type=str, default='3900:7000',
       help='Set crop range (default: 3900:7000)')
+  parser.add_argument('--export', '-x', type=str,
+      help='Export calibrated spectra to specified file in BeSS format')
 
   args = parser.parse_args()
 
@@ -328,12 +330,25 @@ def main():
   if args.suptitle:
     plt.suptitle(args.suptitle)
 
-  for plot in plots:
-    plot.plot_onto(graph_subplot)
+  if args.export:
+    # FIXME
+    export_hdu = pyfits.PrimaryHDU(image_spectra.data())
+    export_hdu.scale('float32')
+    export_header = export_hdu.header
+    export_header.update('CRVAL1', image_spectra.wavelengths()[0])
+    export_header.update('CRPIX1', 1.0)
+    export_header.update('CDELT1', image_spectra.calibration.angstrom_per_pixel())
+    export_header.update('CUNIT1', 'Angstrom')
+    export_header.update('CTYPE1', 'Wavelength')
+    print export_header
+    export_hdu.writeto(args.export)
+  else:
+    for plot in plots:
+      plot.plot_onto(graph_subplot)
 
-  graph_subplot.legend(loc='best')
+    graph_subplot.legend(loc='best')
 
-  plt.show()
+    plt.show()
 
 if __name__ == '__main__':
   main()
