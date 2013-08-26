@@ -12,7 +12,7 @@ class CalibrationReference:
     self.pixel = pixel
     self.angstrom = angstrom
 
-class Calibration:
+class DoublePointCalibration:
   def __init__(self, reference1, reference2):
     self.reference1 = reference1
     self.reference2 = reference2
@@ -37,6 +37,17 @@ class Calibration:
   def angstrom_per_pixel(self):
     return self.slope()
 
+
+class SinglePointCalibration:
+  def __init__(self, reference, angstrom_per_pixel):
+    self.reference = reference
+    self._angstrom_per_pixel = angstrom_per_pixel
+
+  def angstrom(self, pixel):
+    return (self.angstrom_per_pixel() * (pixel - self.reference.pixel)) + self.reference.angstrom
+
+  def angstrom_per_pixel(self):
+    return self._angstrom_per_pixel
 
 
 class ElementLine:
@@ -195,6 +206,28 @@ class ImageSpectra(Plotable):
     imgplot = axes.imshow(self.raw)
     imgplot.set_cmap('gray')
 
+class BessSpectra(Plotable):
+
+  label = 'Raw spectra'
+
+  def __init__(self, hdulist):
+    self.hdulist = hdulist
+    self.calibration = SinglePointCalibration(
+      CalibrationReference(self.get_header('CRPIX1'), self.get_header('CRVAL1')),
+      self.get_header('CDELT1')
+    )
+
+  def plot_image_onto(self, axes):
+    return False
+
+  def get_header(self, header):
+    return self.hdulist[0].header[header]
+
+  def wavelengths(self):
+    return [self.calibration.angstrom(i) for i in range(len(self.data()))]
+
+  def data(self):
+    return self.hdulist[0].data
 
 class CorrectedSpectra(Plotable):
 
@@ -236,8 +269,8 @@ def main():
 
   parser = argparse.ArgumentParser(description='Process linear SA100 spectra')
   parser.add_argument('filename', type=str, help='FITS filename')
-  parser.add_argument('--calibration', '-c', dest='calibration', type=str,
-      help='Calibration pixel position.  Format pixel:angstrom,pixel:angstrom')
+  parser.add_argument('--calibrate', '-c', dest='calibration', type=str,
+      help='Calibration pixel position.  Format pixel:angstrom,pixel:angstrom or pixel,angstrom,angstrom_per_pixel')
   parser.add_argument('--lines', '-l', dest='lines', type=str,
                       help='Plot specified lines.')
   parser.add_argument('--title', '-t', dest='title', type=str, help='Plot title')
@@ -262,7 +295,10 @@ def main():
   hdulist = pyfits.open(args.filename)
   print hdulist.info()
 
-  image_spectra = ImageSpectra(hdulist[0].data)
+  if hdulist[0].header['NAXIS'] == 1:
+    base_spectra = BessSpectra(hdulist)
+  else:
+    base_spectra = ImageSpectra(hdulist[0].data)
 
   graph_subplot = plt.subplot(211)
   graph_subplot.set_ylabel('Relative intensity')
@@ -274,27 +310,43 @@ def main():
   image_subplot = plt.subplot(212)
   image_subplot.set_xlabel('x px')
   image_subplot.set_ylabel('y px')
-  image_spectra.plot_image_onto(image_subplot)
+  base_spectra.plot_image_onto(image_subplot)
 
   plots = []
-  plots.append(image_spectra)
+  plots.append(base_spectra)
 
   if args.calibration:
-    reference_1, reference_2 = args.calibration.split(',')
-    pixel1, angstrom1 = reference_1.split(':')
-    pixel2, angstrom2 = reference_2.split(':')
+    calibration_elements = args.calibration.split(',')
+    if len(calibration_elements) == 2:
+      reference_1, reference_2 = calibration_elements
+      pixel1, angstrom1 = reference_1.split(':')
+      pixel2, angstrom2 = reference_2.split(':')
 
-    if angstrom1 in element_lines:
-      angstrom1 = element_lines[angstrom1].angstrom
-    if angstrom2 in element_lines:
-      angstrom2 = element_lines[angstrom2].angstrom
+      if angstrom1 in element_lines:
+        angstrom1 = element_lines[angstrom1].angstrom
+      if angstrom2 in element_lines:
+        angstrom2 = element_lines[angstrom2].angstrom
 
-    calibration = Calibration(CalibrationReference(int(pixel1),float(angstrom1)),
-                              CalibrationReference(int(pixel2), float(angstrom2)))
+      calibration = DoublePointCalibration(
+        CalibrationReference(int(pixel1), float(angstrom1)),
+        CalibrationReference(int(pixel2), float(angstrom2))
+      )
+    elif len(calibration_elements) == 3:
+      pixel, angstrom, angstrom_per_pixel = calibration_elements
+      if angstrom in element_lines:
+        angstrom = element_lines[angstrom].angstrom
+      calibration = SinglePointCalibration(
+        CalibrationReference(int(pixel), float(angstrom)),
+        float(angstrom_per_pixel)
+      )
+    else:
+      raise ValueError('Unable to parse calibration argument')
 
-    print calibration
+    base_spectra.set_calibration(calibration)
 
-    image_spectra.set_calibration(calibration)
+  if base_spectra.calibration:
+
+    print base_spectra.calibration
 
     if args.lines:
       lines_to_plot = args.lines.split(',')
@@ -308,13 +360,13 @@ def main():
 
     if args.reference:
       reference = Reference(args.reference)
-      reference.scale_to(image_spectra)
+      reference.scale_to(base_spectra)
       plots.append(reference)
 
       # FIXME
       graph_subplot.set_ylim(top=50000)
 
-      plots.append(CorrectedSpectra(image_spectra, reference))
+      plots.append(CorrectedSpectra(base_spectra, reference))
 
   else:
     graph_subplot.set_xlabel('Pixel')
@@ -332,12 +384,12 @@ def main():
 
   if args.export:
     # FIXME
-    export_hdu = pyfits.PrimaryHDU(image_spectra.data())
+    export_hdu = pyfits.PrimaryHDU(base_spectra.data())
     export_hdu.scale('float32')
     export_header = export_hdu.header
-    export_header.update('CRVAL1', image_spectra.wavelengths()[0])
+    export_header.update('CRVAL1', base_spectra.wavelengths()[0])
     export_header.update('CRPIX1', 1.0)
-    export_header.update('CDELT1', image_spectra.calibration.angstrom_per_pixel())
+    export_header.update('CDELT1', base_spectra.calibration.angstrom_per_pixel())
     export_header.update('CUNIT1', 'Angstrom')
     export_header.update('CTYPE1', 'Wavelength')
     print export_header
