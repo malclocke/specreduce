@@ -256,6 +256,22 @@ class CorrectedSpectra(Plotable):
     return scipy.interpolate.splev(self.wavelengths(), tck)
 
 
+class FitsExport:
+  def __init__(self, spectra):
+    self.spectra = spectra
+
+  def writeto(self, filename):
+    export_hdu = pyfits.PrimaryHDU(self.spectra.data())
+    export_hdu.scale('float32')
+    export_header = export_hdu.header
+    export_header.update('CRVAL1', self.spectra.wavelengths()[0])
+    export_header.update('CRPIX1', 1.0)
+    export_header.update('CDELT1', self.spectra.calibration.angstrom_per_pixel())
+    export_header.update('CUNIT1', 'Angstrom')
+    export_header.update('CTYPE1', 'Wavelength')
+    print export_header
+    export_hdu.writeto(filename)
+
 
 def main():
   element_lines = {
@@ -384,16 +400,8 @@ def main():
 
   if args.export:
     # FIXME
-    export_hdu = pyfits.PrimaryHDU(base_spectra.data())
-    export_hdu.scale('float32')
-    export_header = export_hdu.header
-    export_header.update('CRVAL1', base_spectra.wavelengths()[0])
-    export_header.update('CRPIX1', 1.0)
-    export_header.update('CDELT1', base_spectra.calibration.angstrom_per_pixel())
-    export_header.update('CUNIT1', 'Angstrom')
-    export_header.update('CTYPE1', 'Wavelength')
-    print export_header
-    export_hdu.writeto(args.export)
+    export = FitsExport(base_spectra)
+    export.writeto(args.export)
   else:
     for plot in plots:
       plot.plot_onto(graph_subplot)
