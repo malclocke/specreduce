@@ -276,15 +276,15 @@ def main():
         angstrom2 = element_lines[angstrom2].angstrom
 
       calibration = DoublePointCalibration(
-        CalibrationReference(int(pixel1), float(angstrom1)),
-        CalibrationReference(int(pixel2), float(angstrom2))
+        CalibrationReference(float(pixel1), float(angstrom1)),
+        CalibrationReference(float(pixel2), float(angstrom2))
       )
     elif len(calibration_elements) == 3:
       pixel, angstrom, angstrom_per_pixel = calibration_elements
       if angstrom in element_lines:
         angstrom = element_lines[angstrom].angstrom
       calibration = SinglePointCalibration(
-        CalibrationReference(int(pixel), float(angstrom)),
+        CalibrationReference(float(pixel), float(angstrom)),
         float(angstrom_per_pixel)
       )
     else:
