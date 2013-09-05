@@ -79,7 +79,7 @@ pixels = image.load()
 
 for y in range(0, height):
   for x in range(0, width):
-    pixels[x,y] = angstrom2RGB(wavelengths[x], data[x] / max_value)
+    pixels[x,y] = angstrom2RGB(wavelengths[x], float(data[x]) / max_value)
 
 if args.export:
   image.save(args.export)
