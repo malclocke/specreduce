@@ -27,6 +27,10 @@ header = f[0].header
 datamax = s.argmax()
 left = datamax - args.samplewidth
 right = datamax + args.samplewidth
+
+if left < 0:
+  left = 0
+
 y = s[left:right]
 x = np.arange(len(y))
 z = np.polyfit(x, y, args.degree)
