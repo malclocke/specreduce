@@ -5,7 +5,7 @@ import spectraplot
 import numpy as np
 
 parser = argparse.ArgumentParser(
-    description='Find the pixel location of the zero order center')
+    description='Crop spectra between specified wavelengths')
 parser.add_argument('filename', type=str, help='FITS filename')
 parser.add_argument('--outfile', type=str, help='Output filename',
     required=True)
