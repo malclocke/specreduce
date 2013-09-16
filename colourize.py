@@ -58,17 +58,23 @@ def wav2RGB(wavelength, intensity):
 def angstrom2RGB(angstrom, intensity):
   return wav2RGB(angstrom/10, intensity)
 
+def intensity2RGB(intensity):
+  value = int(intensity * 255)
+  return (value, value, value)
+
 parser = argparse.ArgumentParser(description='Create a color image from a FITS spectra')
 parser.add_argument('filename', type=str, help='FITS filename')
 parser.add_argument('--height', '-y', type=int, default=50, help='Image height')
 parser.add_argument('--export', '-x', type=str)
+parser.add_argument('--greyscale', '-g', action='store_true',
+    help='Output a greyscale image')
+parser.add_argument('--split', '-s', action='store_true',
+    help='Make the image split half colour, half greyscale')
 
 args = parser.parse_args()
 
 spectra = spectraplot.BessSpectra(pyfits.open(args.filename))
 
-#start = 300
-#end = 800
 wavelengths = spectra.wavelengths()
 data = spectra.data()
 max_value = data.max()
@@ -79,7 +85,12 @@ pixels = image.load()
 
 for y in range(0, height):
   for x in range(0, width):
-    pixels[x,y] = angstrom2RGB(wavelengths[x], float(data[x]) / max_value)
+    if args.greyscale:
+      pixels[x,y] = intensity2RGB(float(data[x]) / max_value)
+    elif args.split and y > height / 2:
+      pixels[x,y] = intensity2RGB(float(data[x]) / max_value)
+    else:
+      pixels[x,y] = angstrom2RGB(wavelengths[x], float(data[x]) / max_value)
 
 if args.export:
   image.save(args.export)
