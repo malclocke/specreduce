@@ -30,4 +30,5 @@ mean_crval = np.mean(crvals)
 print 'Stacked %d frames' % (len(data))
 
 stacked = np.mean(data, axis=0)
+header.update('NBADD', len(data), 'Number of coadded frames')
 pyfits.writeto(args.outfile, stacked.astype(dtype), header)
