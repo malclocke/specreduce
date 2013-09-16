@@ -23,6 +23,8 @@ filterfactor = args.filterfactor
 top = np.argmax(s>maxima*filterfactor)
 bottom = top + np.argmax(s[top:]<maxima*filterfactor)
 
+print 'detected maxima: %d top: %d bottom: %d' % (maxima, top, bottom)
+
 top = top - args.padding
 bottom = bottom + args.padding
 
@@ -36,11 +38,11 @@ if bottom > d.shape[1]:
 
 crop_height = bottom - top
 
-if crop_height <= args.padding * 2:
-  print 'ERR: %s has zero height area to crop ... skipping' % (args.filename)
-  exit()
+print 'calculated crop %d rows (%d:%d) from %s' % (crop_height, top, bottom, args.filename)
 
-print 'Cropping %d rows (%d:%d) from %s' % (crop_height, top, bottom, args.filename)
+if crop_height <= args.padding * 2:
+  print 'ERR: %s has zero height area to crop' % (args.filename)
+  exit(1)
 
 cropped = d[top:bottom]
 header.update('croptop', top, 'top of crop area in raw image')
