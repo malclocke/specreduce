@@ -26,10 +26,10 @@ clean:
 
 dark_subtracted/%.fit: %.fit
 	mkdir -p dark_subtracted
-ifndef $(DARK)
-		cp -v $< $@
-else
+ifdef DARK
 		$(SPECTRAPLOT_DIR)/dark_subtract.py --outfile $@ $(DARK) $<
+else
+		cp -v $< $@
 endif
 
 vcropped/%.fit: dark_subtracted/%.fit
