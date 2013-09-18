@@ -152,12 +152,20 @@ class BessSpectra(Plotable):
       CalibrationReference(self.get_header('CRPIX1'), self.get_header('CRVAL1')),
       self.get_header('CDELT1')
     )
+    self.set_label()
+
+  def set_label(self):
+    if 'OBJECT' in self.header():
+      self.label = self.get_header('OBJECT')
 
   def plot_image_onto(self, axes):
     return False
 
+  def header(self):
+    return self.hdulist[0].header
+
   def get_header(self, header):
-    return self.hdulist[0].header[header]
+    return self.header()[header]
 
   def wavelengths(self):
     return [self.calibration.angstrom(i) for i in range(len(self.data()))]
