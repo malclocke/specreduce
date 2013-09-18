@@ -51,6 +51,7 @@ class SinglePointCalibration:
 
 
 class ElementLine:
+
   def __init__(self, angstrom, label):
     self.angstrom = angstrom
     self.label = label
@@ -65,8 +66,10 @@ class ElementLine:
     return '%s (%.02f $\AA$)' % (self.label, self.angstrom)
 
   def plot_onto(self, axes):
+    bottom, top = axes.get_ylim()
+    text_y = (top - bottom) * 0.1
     axes.axvline(x=self.angstrom, color=self.color())
-    axes.text(self.angstrom, 10, self.plot_label(),
+    axes.text(self.angstrom, text_y, self.plot_label(),
         rotation='vertical', verticalalignment='bottom')
 
 
