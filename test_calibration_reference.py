@@ -1,10 +1,10 @@
 import unittest
-import spectraplot
+import specreduce
 
 class CalibrationReferenceTests(unittest.TestCase):
 
   def setUp(self):
-    self.cr = spectraplot.CalibrationReference(42, 99)
+    self.cr = specreduce.CalibrationReference(42, 99)
 
   def testPixel(self):
     self.assertEqual(self.cr.pixel, 42)

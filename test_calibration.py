@@ -1,5 +1,5 @@
 import unittest
-import spectraplot
+import specreduce
 
 class MockReference(object):
   pass
@@ -13,7 +13,7 @@ class CalibrationTests(unittest.TestCase):
     self.reference1.angstrom = 0
     self.reference2.pixel = 1000
     self.reference2.angstrom = 1000
-    self.c = spectraplot.Calibration(self.reference1, self.reference2)
+    self.c = specreduce.Calibration(self.reference1, self.reference2)
 
   def testAngstrom(self):
     self.assertEqual(self.c.angstrom(100), 100)

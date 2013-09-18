@@ -1,10 +1,10 @@
 import unittest
-import spectraplot
+import specreduce
 
 class ElementLineTests(unittest.TestCase):
 
   def setUp(self):
-    self.el = spectraplot.ElementLine(4861, 'Hb')
+    self.el = specreduce.ElementLine(4861, 'Hb')
 
   def testAngstrom(self):
     self.assertEqual(self.el.angstrom, 4861)

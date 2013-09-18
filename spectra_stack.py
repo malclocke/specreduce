@@ -3,7 +3,7 @@
 import pyfits
 import numpy as np
 import argparse
-import spectraplot
+import specreduce
 
 parser = argparse.ArgumentParser(description='Stack spectra files')
 parser.add_argument('master', type=str)
@@ -13,7 +13,7 @@ parser.add_argument('--outfile', '-o', type=str, required=True)
 args = parser.parse_args()
 
 data = []
-master = spectraplot.BessSpectra(pyfits.open(args.master))
+master = specreduce.BessSpectra(pyfits.open(args.master))
 header = master.hdulist[0].header
 
 data.append(master.data())
@@ -21,7 +21,7 @@ data.append(master.data())
 crvals = []
 
 for f in args.file:
-  s = spectraplot.BessSpectra(pyfits.open(f))
+  s = specreduce.BessSpectra(pyfits.open(f))
   data.append(s.interpolate_to(master))
 
 dtype = master.hdulist[0].data.dtype.name

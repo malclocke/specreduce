@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import pyfits
 import argparse
-import spectraplot
+import specreduce
 import numpy as np
 
 parser = argparse.ArgumentParser(

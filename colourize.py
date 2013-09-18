@@ -3,7 +3,7 @@
 from PIL import Image
 import numpy as np
 import pyfits
-import spectraplot
+import specreduce
 import argparse
 
 
@@ -73,7 +73,7 @@ parser.add_argument('--split', '-s', action='store_true',
 
 args = parser.parse_args()
 
-spectra = spectraplot.BessSpectra(pyfits.open(args.filename))
+spectra = specreduce.BessSpectra(pyfits.open(args.filename))
 
 wavelengths = spectra.wavelengths()
 data = spectra.data()

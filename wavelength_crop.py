@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import pyfits
 import argparse
-import spectraplot
+import specreduce
 import numpy as np
 
 parser = argparse.ArgumentParser(
@@ -19,7 +19,7 @@ args = parser.parse_args()
 f = pyfits.open(args.filename)
 header = f[0].header
 
-spectra = spectraplot.BessSpectra(f)
+spectra = specreduce.BessSpectra(f)
 calibration = spectra.calibration
 wl = np.array(spectra.wavelengths())
 left = np.argmax(wl>args.min)
