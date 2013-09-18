@@ -71,6 +71,9 @@ class ElementLine:
 
 
 class Plotable:
+
+  can_plot_image = False
+
   def plot_onto(self, axes):
     axes.plot(self.wavelengths(), self.data(), label=self.label)
 
@@ -118,6 +121,7 @@ class ImageSpectra(Plotable):
 
   label = 'Raw data'
   calibration = False
+  can_plot_image = True
 
   def __init__(self, data):
     self.raw = data

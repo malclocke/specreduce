@@ -42,17 +42,21 @@ if hdulist[0].header['NAXIS'] == 1:
 else:
   base_spectra = specreduce.ImageSpectra(hdulist[0].data)
 
-graph_subplot = plt.subplot(211)
-graph_subplot.set_ylabel('Relative intensity')
 
 if args.crop:
   crop_left, crop_right = args.croprange.split(':')
   graph_subplot.set_xlim(left=int(crop_left),right=int(crop_right))
 
-image_subplot = plt.subplot(212)
-image_subplot.set_xlabel('x px')
-image_subplot.set_ylabel('y px')
-base_spectra.plot_image_onto(image_subplot)
+if base_spectra.can_plot_image:
+  graph_subplot = plt.subplot(211)
+  image_subplot = plt.subplot(212)
+  image_subplot.set_xlabel('x px')
+  image_subplot.set_ylabel('y px')
+  base_spectra.plot_image_onto(image_subplot)
+else:
+  graph_subplot = plt.subplot(111)
+
+graph_subplot.set_ylabel('Relative intensity')
 
 plots = []
 plots.append(base_spectra)
