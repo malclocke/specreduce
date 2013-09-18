@@ -65,7 +65,7 @@ def intensity2RGB(intensity):
 parser = argparse.ArgumentParser(description='Create a color image from a FITS spectra')
 parser.add_argument('filename', type=str, help='FITS filename')
 parser.add_argument('--height', '-y', type=int, default=50, help='Image height')
-parser.add_argument('--export', '-x', type=str)
+parser.add_argument('--outfile', '-o', type=str)
 parser.add_argument('--greyscale', '-g', action='store_true',
     help='Output a greyscale image')
 parser.add_argument('--split', '-s', action='store_true',
@@ -92,7 +92,7 @@ for y in range(0, height):
     else:
       pixels[x,y] = angstrom2RGB(wavelengths[x], float(data[x]) / max_value)
 
-if args.export:
-  image.save(args.export)
+if args.outfile:
+  image.save(args.outfile)
 else:
   image.show()
