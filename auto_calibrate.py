@@ -13,6 +13,8 @@ parser.add_argument('--spacing', type=float, required=True,
     help='Channel spacing (Angstrom / pixel')
 parser.add_argument('--samplewidth', type=int, default=20,
     help='Width each side of zero order peak to sample.')
+parser.add_argument('--maxx', type=int,
+    help='Maximum X value for finding first order peak.')
 parser.add_argument('--degree', type=int, default=7,
     help='Degree of polynomial fit')
 parser.add_argument('--visualise', action='store_true',
@@ -21,7 +23,12 @@ parser.add_argument('--visualise', action='store_true',
 args = parser.parse_args()
 
 f = pyfits.open(args.filename)
-s = f[0].data.sum(axis=0)
+data = f[0].data.sum(axis=0)
+s = data
+
+if args.maxx:
+  s = s[:args.maxx]
+
 header = f[0].header
 
 datamax = s.argmax()
@@ -49,4 +56,4 @@ header.update('CRPIX1', float(maxpos))
 header.update('CDELT1', args.spacing)
 header.update('CUNIT1', 'Angstrom')
 header.update('CTYPE1', 'Wavelength')
-pyfits.writeto(args.outfile, s.astype('int32'), header, output_verify='fix')
+pyfits.writeto(args.outfile, data.astype('int32'), header, output_verify='fix')
