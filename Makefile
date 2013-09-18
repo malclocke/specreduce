@@ -38,7 +38,12 @@ vcropped/%.fit: dark_subtracted/%.fit
 
 calibrated/%.fit: vcropped/%.fit
 	mkdir -p calibrated
+ifdef MAXX
+	$(SPECTRAPLOT_DIR)/auto_calibrate.py --maxx $(MAXX) --spacing $(SPACING) --outfile $@ $<
+else
 	$(SPECTRAPLOT_DIR)/auto_calibrate.py --spacing $(SPACING) --outfile $@ $<
+endif
+
 
 hcropped/%.fit: calibrated/%.fit
 	mkdir -p hcropped
