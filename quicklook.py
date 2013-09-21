@@ -13,8 +13,19 @@ element_lines = {
   'CaK': specreduce.ElementLine(3934, 'Ca K'),
 }
 
+def get_spectra(filename):
+  hdulist = pyfits.open(filename)
+
+  if hdulist[0].header['NAXIS'] == 1:
+    return specreduce.BessSpectra(hdulist)
+  else:
+    return specreduce.ImageSpectra(hdulist[0].data)
+
+
+
 parser = argparse.ArgumentParser(description='Plot spectra')
-parser.add_argument('filename', type=str, help='FITS filename')
+parser.add_argument('filename', type=str, help='FITS filename',
+    nargs='+')
 parser.add_argument('--calibrate', '-c', dest='calibration', type=str,
     help='Calibration pixel position.  Format pixel:angstrom,pixel:angstrom or pixel,angstrom,angstrom_per_pixel')
 parser.add_argument('--lines', '-l', dest='lines', type=str,
@@ -34,13 +45,7 @@ if args.listlines:
     print "%4s %s" % (k, v)
   exit()
 
-hdulist = pyfits.open(args.filename)
-print hdulist.info()
-
-if hdulist[0].header['NAXIS'] == 1:
-  base_spectra = specreduce.BessSpectra(hdulist)
-else:
-  base_spectra = specreduce.ImageSpectra(hdulist[0].data)
+base_spectra = get_spectra(args.filename[0])
 
 if base_spectra.can_plot_image:
   graph_subplot = plt.subplot(211)
@@ -110,12 +115,15 @@ else:
 if args.title:
   title = args.title
 else:
-  title = args.filename
+  title = args.filename[0]
 
 plt.title(title)
 
 if args.suptitle:
   plt.suptitle(args.suptitle)
+
+if len(args.filename) > 1:
+  [plots.append(get_spectra(s)) for s in args.filename[1:]]
 
 for plot in plots:
   plot.plot_onto(graph_subplot)
