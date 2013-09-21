@@ -70,6 +70,8 @@ parser.add_argument('--greyscale', '-g', action='store_true',
     help='Output a greyscale image')
 parser.add_argument('--split', '-s', action='store_true',
     help='Make the image split half colour, half greyscale')
+parser.add_argument('--graph', '-G', action='store_true',
+    help='Overlay an intensity graph on the image')
 
 args = parser.parse_args()
 
@@ -85,7 +87,10 @@ pixels = image.load()
 
 for y in range(0, height):
   for x in range(0, width):
-    if args.greyscale:
+    scaled_y = int(data[x] / (float(max_value) / height))
+    if args.graph and height - y == scaled_y:
+      pixels[x,y] = (255,255,255)
+    elif args.greyscale:
       pixels[x,y] = intensity2RGB(float(data[x]) / max_value)
     elif args.split and y > height / 2:
       pixels[x,y] = intensity2RGB(float(data[x]) / max_value)
