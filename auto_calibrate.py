@@ -23,7 +23,7 @@ parser.add_argument('--visualise', action='store_true',
 args = parser.parse_args()
 
 f = pyfits.open(args.filename)
-data = f[0].data.sum(axis=0)
+data = f[0].data
 s = data
 
 if args.maxx:

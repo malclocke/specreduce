@@ -1,8 +1,9 @@
 # Order of ops is:
 # - Dark subtract
 # - Vertical crop
-# - Calibrate and bin
-# - Horizontal crop
+# - Bin
+# - Calibrate
+# - Wavelength crop
 # - Normalise
 #
 
@@ -10,6 +11,7 @@ SCRIPT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
 DARK_SUBTRACTED_DIR			:= dark_subtracted
 VCROP_DIR								:= vcropped
+BINNED_DIR							:= binned
 CALIBRATED_DIR					:= calibrated
 WAVELENGTH_CROPPED_DIR	:= wavelength_cropped
 NORMALISED_DIR					:= normalised
@@ -39,7 +41,11 @@ $(VCROP_DIR)/%.fit: $(DARK_SUBTRACTED_DIR)/%.fit
 	mkdir -p $(VCROP_DIR)
 	$(SCRIPT_DIR)/autocrop.py --filterfactor 0.95 --padding $(VPADDING) --outfile $@ $<
 
-$(CALIBRATED_DIR)/%.fit: $(VCROP_DIR)/%.fit
+$(BINNED_DIR)/%.fit: $(VCROP_DIR)/%.fit
+	mkdir -p $(BINNED_DIR)
+	$(SCRIPT_DIR)/bin.py --outfile $@ $<
+
+$(CALIBRATED_DIR)/%.fit: $(BINNED_DIR)/%.fit
 	mkdir -p $(CALIBRATED_DIR)
 ifdef MAXX
 	$(SCRIPT_DIR)/auto_calibrate.py --maxx $(MAXX) --spacing $(SPACING) --outfile $@ $<
