@@ -8,13 +8,14 @@
 
 SCRIPT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-DARK_SUBTRACTED_DIR	:= dark_subtracted
-VCROP_DIR						:= vcropped
-CALIBRATED_DIR			:= calibrated
-HCROP_DIR						:= hcropped
-NORMALISED_DIR			:= normalised
-REDUCED_DIR					:= reduced
-VPADDING						:= 10
+DARK_SUBTRACTED_DIR			:= dark_subtracted
+VCROP_DIR								:= vcropped
+CALIBRATED_DIR					:= calibrated
+WAVELENGTH_CROPPED_DIR	:= wavelength_cropped
+NORMALISED_DIR					:= normalised
+REDUCED_DIR							:= reduced
+
+VPADDING								:= 10
 
 PATTERN ?= *_[0-9][0-9][0-9][0-9].fit
 
@@ -24,7 +25,7 @@ all: $(TARGETS)
 
 clean:
 	rm -f $(DARK_SUBTRACTED_DIR)/* $(VCROP_DIR)/* $(CALIBRATED_DIR)/* \
-		$(HCROP_DIR)/* $(NORMALISED_DIR)/* $(REDUCED_DIR)/*
+		$(WAVELENGTH_CROPPED_DIR)/* $(NORMALISED_DIR)/* $(REDUCED_DIR)/*
 
 $(DARK_SUBTRACTED_DIR)/%.fit: %.fit
 	mkdir -p $(DARK_SUBTRACTED_DIR)
@@ -46,11 +47,11 @@ else
 	$(SCRIPT_DIR)/auto_calibrate.py --spacing $(SPACING) --outfile $@ $<
 endif
 
-$(HCROP_DIR)/%.fit: $(CALIBRATED_DIR)/%.fit
-	mkdir -p $(HCROP_DIR)
+$(WAVELENGTH_CROPPED_DIR)/%.fit: $(CALIBRATED_DIR)/%.fit
+	mkdir -p $(WAVELENGTH_CROPPED_DIR)
 	$(SCRIPT_DIR)/wavelength_crop.py --outfile $@ $<
 
-$(NORMALISED_DIR)/%.fit: $(HCROP_DIR)/%.fit
+$(NORMALISED_DIR)/%.fit: $(WAVELENGTH_CROPPED_DIR)/%.fit
 	mkdir -p $(NORMALISED_DIR)
 	$(SCRIPT_DIR)/normalise.py --outfile $@ $<
 
