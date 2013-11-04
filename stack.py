@@ -29,4 +29,6 @@ master = np.mean(data, axis=0)
 
 print 'Stacked %d frames' % (len(data))
 
-pyfits.writeto(args.outfile, master.astype(np.uint8), header)
+pyfits.writeto(
+  args.outfile, master.astype(np.uint8), header, output_verify='fix'
+)
