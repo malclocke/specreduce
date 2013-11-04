@@ -7,7 +7,7 @@ import numpy as np
 parser = argparse.ArgumentParser(
     description='Normalise spectra.')
 parser.add_argument('filename', type=str, help='FITS filename')
-parser.add_argument('--outfile', type=str, help='Output filename',
+parser.add_argument('--outfile', '-o', type=str, help='Output filename',
     required=True)
 
 args = parser.parse_args()
