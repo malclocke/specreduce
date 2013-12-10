@@ -21,9 +21,23 @@ VPADDING								:= 10
 
 PATTERN ?= *_[0-9][0-9][0-9][0-9].fit
 
-TARGETS := $(patsubst %.fit, $(REDUCED_DIR)/%.fit, $(wildcard $(PATTERN)))
+DARK_SUBTRACTED_TARGETS := $(patsubst %.fit, $(DARK_SUBTRACTED_DIR)/%.fit, $(wildcard $(PATTERN)))
+VCROP_TARGETS := $(patsubst %.fit, $(VCROP_DIR)/%.fit, $(wildcard $(PATTERN)))
+BINNED_TARGETS := $(patsubst %.fit, $(BINNED_DIR)/%.fit, $(wildcard $(PATTERN)))
+CALIBRATED_TARGETS := $(patsubst %.fit, $(CALIBRATED_DIR)/%.fit, $(wildcard $(PATTERN)))
+WAVELENGTH_CROPPED_TARGETS := $(patsubst %.fit, $(WAVELENGTH_CROPPED_DIR)/%.fit, $(wildcard $(PATTERN)))
+NORMALISED_TARGETS := $(patsubst %.fit, $(NORMALISED_DIR)/%.fit, $(wildcard $(PATTERN)))
+REDUCED_TARGETS := $(patsubst %.fit, $(REDUCED_DIR)/%.fit, $(wildcard $(PATTERN)))
 
-all: $(TARGETS)
+all: reduced
+
+dark_subtract: $(DARK_SUBTRACTED_TARGETS)
+vcrop: $(VCROP_TARGETS)
+binned: $(BINNED_TARGETS)
+calibrated: $(CALIBRATED_TARGETS)
+wavelength_cropped: $(WAVELENGTH_CROPPED_TARGETS)
+normalised: $(NORMALISED_TARGETS)
+reduced: $(REDUCED_TARGETS)
 
 clean:
 	rm -f $(DARK_SUBTRACTED_DIR)/* $(VCROP_DIR)/* $(CALIBRATED_DIR)/* \
