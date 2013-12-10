@@ -22,6 +22,13 @@ def get_spectra(filename):
     return specreduce.ImageSpectra(hdulist[0].data)
 
 
+def get_line(line_definition):
+  if ":" in line_definition:
+    wavelength, label = line_definition.split(":")
+    return specreduce.ElementLine(float(wavelength), label)
+  else:
+    return element_lines[line_definition]
+
 
 parser = argparse.ArgumentParser(description='Plot spectra')
 parser.add_argument('filename', type=str, help='FITS filename',
@@ -102,7 +109,7 @@ if base_spectra.calibration:
     lines_to_plot = args.lines.split(',')
 
     for line_to_plot in lines_to_plot:
-      line = element_lines[line_to_plot]
+      line = get_line(line_to_plot)
       plots.append(line)
 
   graph_subplot.axvline(x=0, color='yellow')
