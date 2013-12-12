@@ -13,13 +13,16 @@ element_lines = {
   'CaK': specreduce.ElementLine(3934, 'Ca K'),
 }
 
-def get_spectra(filename):
+def get_spectra(filename, legend_keyword = 'DATE-OBS'):
   hdulist = pyfits.open(filename)
 
   if hdulist[0].header['NAXIS'] == 1:
-    return specreduce.BessSpectra(hdulist)
+    s = specreduce.BessSpectra(hdulist)
   else:
-    return specreduce.ImageSpectra(hdulist[0].data)
+    s = specreduce.ImageSpectra(hdulist[0].data)
+
+  s.set_label_header(legend_keyword)
+  return s
 
 
 def get_line(line_definition):
@@ -44,6 +47,8 @@ parser.add_argument('--listlines', '-L', action='store_true',
 parser.add_argument('--crop', '-C', action='store_true', help='Crop spectra')
 parser.add_argument('--croprange', type=str, default='3900:7000',
     help='Set crop range (default: 3900:7000)')
+parser.add_argument('--headerlabel', '-H', type=str, default='DATE-OBS',
+    help='Use the value of the specified FITS header as the legend (default: DATE-OBS)')
 
 args = parser.parse_args()
 
@@ -52,7 +57,7 @@ if args.listlines:
     print "%4s %s" % (k, v)
   exit()
 
-base_spectra = get_spectra(args.filename[0])
+base_spectra = get_spectra(args.filename[0], args.headerlabel)
 
 if base_spectra.can_plot_image:
   graph_subplot = plt.subplot(211)
@@ -130,7 +135,7 @@ if args.suptitle:
   plt.suptitle(args.suptitle)
 
 if len(args.filename) > 1:
-  [plots.append(get_spectra(s)) for s in args.filename[1:]]
+  [plots.append(get_spectra(s, args.headerlabel)) for s in args.filename[1:]]
 
 for plot in plots:
   plot.plot_onto(graph_subplot)

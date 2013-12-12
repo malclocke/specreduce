@@ -148,6 +148,7 @@ class ImageSpectra(Plotable):
 class BessSpectra(Plotable):
 
   label = 'Raw spectra'
+  label_header = 'DATE-OBS'
 
   def __init__(self, hdulist):
     self.hdulist = hdulist
@@ -158,8 +159,12 @@ class BessSpectra(Plotable):
     self.set_label()
 
   def set_label(self):
-    if 'OBJECT' in self.header():
-      self.label = self.get_header('OBJECT')
+    if self.label_header in self.header():
+      self.label = self.get_header(self.label_header)
+
+  def set_label_header(self, label_header):
+    self.label_header = label_header
+    self.set_label()
 
   def plot_image_onto(self, axes):
     return False
