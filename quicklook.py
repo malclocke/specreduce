@@ -3,6 +3,7 @@ import specreduce
 import argparse
 import pyfits
 import matplotlib.pyplot as plt
+import numpy as np
 
 element_lines = {
   'Ha': specreduce.ElementLine(6563, r'H$\alpha$'),
@@ -12,6 +13,9 @@ element_lines = {
   'CaH': specreduce.ElementLine(3968, 'Ca H'),
   'CaK': specreduce.ElementLine(3934, 'Ca K'),
 }
+
+# These linestyles are used for grayscale plots.
+dashes = [ '-', '--', '-.', ':' ]
 
 def get_spectra(filename, legend_keyword = 'DATE-OBS'):
   hdulist = pyfits.open(filename)
@@ -49,6 +53,11 @@ parser.add_argument('--croprange', type=str, default='3900:7000',
     help='Set crop range (default: 3900:7000)')
 parser.add_argument('--headerlabel', '-H', type=str, default='DATE-OBS',
     help='Use the value of the specified FITS header as the legend (default: DATE-OBS)')
+parser.add_argument('--offset', '-o', type=float, default=0.0,
+    help='Offset each plot by offset in the Y axes.  Default: 0.0')
+parser.add_argument('--grayscale', '-g', action='store_true',
+    help='Plot chart grayscale')
+
 
 args = parser.parse_args()
 
@@ -137,8 +146,13 @@ if args.suptitle:
 if len(args.filename) > 1:
   [plots.append(get_spectra(s, args.headerlabel)) for s in args.filename[1:]]
 
-for plot in plots:
-  plot.plot_onto(graph_subplot)
+for i, plot in enumerate(plots):
+  offset = args.offset * (len(plots) - i)
+  plot.grayscale = args.grayscale
+  if args.grayscale:
+    plot.linestyle = dashes[np.mod(i, len(dashes))]
+
+  plot.plot_onto(graph_subplot, offset = offset)
 
 graph_subplot.legend(loc='best')
 

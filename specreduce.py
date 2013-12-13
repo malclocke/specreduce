@@ -76,9 +76,18 @@ class ElementLine:
 class Plotable:
 
   can_plot_image = False
+  grayscale = False
+  linestyle = '-'
 
-  def plot_onto(self, axes):
-    axes.plot(self.wavelengths(), self.data(), label=self.label)
+  def plot_onto(self, axes, offset = 0):
+    plot_args = {'label': self.label, 'linestyle': self.linestyle}
+
+    if self.grayscale:
+      plot_args['color'] = 'k'
+
+    data = self.data() + offset
+
+    axes.plot(self.wavelengths(), data, **plot_args)
 
   def max(self):
     return self.data().max()
