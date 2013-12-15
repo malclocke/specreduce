@@ -17,7 +17,7 @@ WAVELENGTH_CROPPED_DIR	:= wavelength_cropped
 NORMALISED_DIR					:= normalised
 REDUCED_DIR							:= reduced
 
-VPADDING								:= 10
+VPADDING								:= 30
 
 PATTERN ?= *_[0-9][0-9][0-9][0-9].fit
 
