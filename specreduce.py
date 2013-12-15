@@ -101,34 +101,6 @@ class Plotable:
     return np.interp(spectra.wavelengths(), self.wavelengths(), self.data())
 
 
-class Reference(Plotable):
-
-  base_path = os.path.dirname(os.path.realpath(__file__))
-  subdir = "references/"
-  scale_factor = 1
-
-  def __init__(self, reference, interpolate_source=False):
-    self.hdulist = pyfits.open(self.reference_path(reference))
-    self.label = 'Reference (%s)' % reference
-    self.interpolate_source = interpolate_source
-
-  def wavelengths(self):
-    return self.hdulist[1].data.field(0)
-
-  def scale_to(self, spectra):
-    self.scale_factor = spectra.max() / self.data().max()
-    return self.scale_factor
-
-  def reference_path(self, reference):
-    return os.path.join(self.reference_dir(), reference + '.fits')
-
-  def reference_dir(self):
-    return os.path.join(self.base_path, self.subdir)
-
-  def data(self):
-    return self.scale_factor * self.hdulist[1].data.field(1)
-
-
 class ImageSpectra(Plotable):
 
   label = 'Raw data'
