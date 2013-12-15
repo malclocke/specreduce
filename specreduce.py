@@ -65,7 +65,7 @@ class ElementLine:
   def plot_label(self):
     return '%s (%.02f $\AA$)' % (self.label, self.angstrom)
 
-  def plot_onto(self, axes):
+  def plot_onto(self, axes, offset = 0):
     bottom, top = axes.get_ylim()
     text_y = (top - bottom) * 0.1
     axes.axvline(x=self.angstrom, color=self.color())
@@ -153,6 +153,9 @@ class ImageSpectra(Plotable):
   def plot_image_onto(self, axes):
     imgplot = axes.imshow(self.raw)
     imgplot.set_cmap('gray')
+
+  def set_label_header(self, label_header):
+    return
 
 class BessSpectra(Plotable):
 
