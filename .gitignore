@@ -1,1 +1,7 @@
 *.pyc
+example/binned/*
+example/calibrated/*
+example/dark_subtracted/*
+example/normalised/*
+example/vcropped/*
+example/wavelength_cropped/*
