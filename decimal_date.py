@@ -24,4 +24,4 @@ seconds_expired_in_day = (timestamp.hour * 3600) + (timestamp.minute * 60) + tim
 fraction_of_day = float(seconds_expired_in_day) / 86400
 day_with_fraction = float(day) + fraction_of_day
 
-print '%d %s %.2f' % (timestamp.year, month, day_with_fraction)
+print '%d %s %.3f' % (timestamp.year, month, day_with_fraction)
