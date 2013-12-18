@@ -36,6 +36,14 @@ def get_line(line_definition):
   else:
     return element_lines[line_definition]
 
+def calibration_reference_from_arg(arg):
+  pixel, angstrom = arg.split(':')
+
+  if angstrom in element_lines:
+    angstrom = element_lines[angstrom].angstrom
+
+  return specreduce.CalibrationReference(float(pixel), float(angstrom))
+
 
 parser = argparse.ArgumentParser(description='Plot spectra')
 parser.add_argument('filename', type=str, help='FITS filename',
@@ -88,20 +96,20 @@ plots.append(base_spectra)
 
 if args.calibration:
   calibration_elements = args.calibration.split(',')
-  if len(calibration_elements) == 2:
-    reference_1, reference_2 = calibration_elements
-    pixel1, angstrom1 = reference_1.split(':')
-    pixel2, angstrom2 = reference_2.split(':')
 
-    if angstrom1 in element_lines:
-      angstrom1 = element_lines[angstrom1].angstrom
-    if angstrom2 in element_lines:
-      angstrom2 = element_lines[angstrom2].angstrom
-
-    calibration = specreduce.DoublePointCalibration(
-      specreduce.CalibrationReference(float(pixel1), float(angstrom1)),
-      specreduce.CalibrationReference(float(pixel2), float(angstrom2))
-    )
+  if ':' in args.calibration:
+    if len(calibration_elements) == 2:
+      calibration = specreduce.DoublePointCalibration(
+        calibration_reference_from_arg(calibration_elements[0]),
+        calibration_reference_from_arg(calibration_elements[1])
+      )
+    elif len(calibration_elements) > 2:
+      references = []
+      for element in calibration_elements:
+        references.append(calibration_reference_from_arg(element))
+      calibration = specreduce.NonLinearCalibration(references)
+    else:
+      raise ValueError('Unable to parse calibration argument')
   elif len(calibration_elements) == 3:
     pixel, angstrom, angstrom_per_pixel = calibration_elements
     if angstrom in element_lines:

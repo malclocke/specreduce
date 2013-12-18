@@ -12,6 +12,11 @@ class CalibrationReference:
     self.pixel = pixel
     self.angstrom = angstrom
 
+  def __repr__(self):
+    return "<Calibration reference: pixel: %d, angstrom: %f>" % (
+        self.pixel, self.angstrom
+    )
+
 class DoublePointCalibration:
   def __init__(self, reference1, reference2):
     self.reference1 = reference1
@@ -48,6 +53,25 @@ class SinglePointCalibration:
 
   def angstrom_per_pixel(self):
     return self._angstrom_per_pixel
+
+
+class NonLinearCalibration:
+  def __init__(self, references, degree = 2):
+    self.references = references
+    self.degree = degree
+    self.poly1d = self._generate_poly1d()
+
+  def angstrom(self, pixel):
+    return self.poly1d(pixel)
+
+  def _generate_poly1d(self):
+    x = []
+    y = []
+    for reference in self.references:
+      x.append(reference.pixel)
+      y.append(reference.angstrom)
+    z = np.polyfit(x, y, self.degree)
+    return np.poly1d(z)
 
 
 class ElementLine:
